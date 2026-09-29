@@ -1,5 +1,7 @@
+import csv
+import io
 from datetime import date, datetime
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect, url_for, Response
 from flask_sqlalchemy import SQLAlchemy
 
 app = Flask(__name__)
@@ -117,5 +119,20 @@ def set_budget():
     db.session.commit()
     return redirect(url_for("home", month=month))
 
+@app.route("/export")
+def export_csv():
+    expenses = Expense.query.order_by(Expense.date.desc()).all()
+
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(["Date", "Category", "Amount (Rs)", "Note"])
+    for e in expenses:
+        writer.writerow([e.date, e.category, f"{e.amount_paise / 100:.2f}", e.note or ""])
+
+    return Response(
+        output.getvalue(),
+        mimetype="text/csv",
+        headers={"Content-Disposition": "attachment; filename=expenses.csv"},
+    )
 if __name__ == "__main__":
     app.run(debug=True)

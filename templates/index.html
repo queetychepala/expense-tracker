@@ -7,6 +7,7 @@
 <body>
     <h1>My Expenses</h1>
     <a href="{{ url_for('add_expense') }}">+ Add Expense</a>
+    <a href="{{ url_for('export_csv') }}">Download CSV</a>
 
     <form method="GET" action="{{ url_for('home') }}">
         <label>Category:</label>

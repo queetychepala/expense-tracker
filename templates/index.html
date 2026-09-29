@@ -22,13 +22,31 @@
         <a href="{{ url_for('home') }}">Clear filters</a>
     </form>
     <h3>Total: ₹{{ "%.2f"|format(total / 100) }}</h3>
-        {% if breakdown %}
+            {% if breakdown %}
     <h4>Breakdown</h4>
     <ul>
         {% for cat, amt in breakdown.items() %}
         <li>{{ cat }}: ₹{{ "%.2f"|format(amt / 100) }}</li>
         {% endfor %}
     </ul>
+
+    <div style="max-width: 320px;">
+        <canvas id="categoryChart"></canvas>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        const labels = {{ breakdown.keys()|list|tojson }};
+        const values = {{ breakdown.values()|list|tojson }}.map(v => v / 100);
+
+        new Chart(document.getElementById("categoryChart"), {
+            type: "pie",
+            data: {
+                labels: labels,
+                datasets: [{ data: values }]
+            }
+        });
+    </script>
     {% endif %}
 
     {% if expenses %}

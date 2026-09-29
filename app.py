@@ -14,6 +14,10 @@ class Expense(db.Model):
     date = db.Column(db.Date, nullable=False, default=date.today)
     note = db.Column(db.String(200))
 
+class Budget(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    month = db.Column(db.String(7), unique=True, nullable=False)  # e.g. 2026-09
+    limit_paise = db.Column(db.Integer, nullable=False)
 
 with app.app_context():
     db.create_all()
@@ -48,6 +52,10 @@ def home():
     for e in all_expenses:
         key = e.date.strftime("%Y-%m")
         monthly[key] = monthly.get(key, 0) + e.amount_paise
+    budget_month = month or date.today().strftime("%Y-%m")
+    budget = Budget.query.filter_by(month=budget_month).first()
+    budget_limit = budget.limit_paise if budget else None
+    budget_spent = monthly.get(budget_month, 0)
 
     return render_template(
         "index.html",
@@ -58,6 +66,9 @@ def home():
         month=month,
         breakdown=breakdown,
         monthly=monthly,
+        budget_month=budget_month,
+        budget_limit=budget_limit,
+        budget_spent=budget_spent,
     )
 
 @app.route("/add", methods=["GET", "POST"])
@@ -93,6 +104,18 @@ def edit_expense(expense_id):
         db.session.commit()
         return redirect(url_for("home"))
     return render_template("edit_expense.html", expense=expense)
+
+@app.route("/budget", methods=["POST"])
+def set_budget():
+    month = request.form["month"]
+    limit = round(float(request.form["limit"]) * 100)
+    budget = Budget.query.filter_by(month=month).first()
+    if budget:
+        budget.limit_paise = limit
+    else:
+        db.session.add(Budget(month=month, limit_paise=limit))
+    db.session.commit()
+    return redirect(url_for("home", month=month))
 
 if __name__ == "__main__":
     app.run(debug=True)

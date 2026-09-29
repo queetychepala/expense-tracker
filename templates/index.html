@@ -2,6 +2,7 @@
 <html>
 <head>
     <title>Expense Tracker</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
     <h1>My Expenses</h1>
@@ -22,6 +23,24 @@
         <a href="{{ url_for('home') }}">Clear filters</a>
     </form>
     <h3>Total: ₹{{ "%.2f"|format(total / 100) }}</h3>
+        <h4>Budget for {{ budget_month }}</h4>
+    {% if budget_limit %}
+        <p>Spent ₹{{ "%.2f"|format(budget_spent / 100) }} of ₹{{ "%.2f"|format(budget_limit / 100) }}</p>
+        {% if budget_spent > budget_limit %}
+        <p style="color: red;"><strong>Warning: you are over budget by
+            ₹{{ "%.2f"|format((budget_spent - budget_limit) / 100) }}!</strong></p>
+        {% else %}
+        <p style="color: green;">You have ₹{{ "%.2f"|format((budget_limit - budget_spent) / 100) }} left.</p>
+        {% endif %}
+    {% else %}
+        <p>No budget set for this month.</p>
+    {% endif %}
+
+    <form method="POST" action="{{ url_for('set_budget') }}">
+        <input type="hidden" name="month" value="{{ budget_month }}">
+        <input type="number" name="limit" step="0.01" placeholder="Set budget (₹)" required>
+        <button type="submit">Save Budget</button>
+    </form>
             {% if breakdown %}
     <h4>Breakdown</h4>
     <ul>
@@ -34,7 +53,7 @@
         <canvas id="categoryChart"></canvas>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
     <script>
         const labels = {{ breakdown.keys()|list|tojson }};
         const values = {{ breakdown.values()|list|tojson }}.map(v => v / 100);

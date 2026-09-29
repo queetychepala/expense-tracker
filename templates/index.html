@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Expense Tracker</title>
+</head>
+<body>
+    <h1>My Expenses</h1>
+    <a href="{{ url_for('add_expense') }}">+ Add Expense</a>
+
+    <h3>Total: ₹{{ "%.2f"|format(total / 100) }}</h3>
+
+    {% if expenses %}
+    <table border="1" cellpadding="8">
+        <tr>
+            <th>Date</th>
+            <th>Category</th>
+            <th>Amount (₹)</th>
+            <th>Note</th>
+            <th>Action</th>
+        </tr>
+        {% for e in expenses %}
+        <tr>
+            <td>{{ e.date }}</td>
+            <td>{{ e.category }}</td>
+            <td>{{ "%.2f"|format(e.amount_paise / 100) }}</td>
+            <td>{{ e.note }}</td>
+            <td>
+                <a href="{{ url_for('edit_expense', expense_id=e.id) }}">Edit</a>
+                <form method="POST" action="{{ url_for('delete_expense', expense_id=e.id) }}"
+                      onsubmit="return confirm('Delete this expense?');">
+                    <button type="submit">Delete</button>
+                </form>
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+    {% else %}
+    <p>No expenses yet. Add your first one!</p>
+    {% endif %}
+</body>
+</html>

@@ -8,15 +8,28 @@
     <a href="{{ url_for('add_expense') }}">+ Add Expense</a>
 
     <form method="GET" action="{{ url_for('home') }}">
-        <label>Filter by category:</label>
+        <label>Category:</label>
         <select name="category" onchange="this.form.submit()">
             <option value="">All</option>
             {% for c in categories %}
             <option value="{{ c }}" {% if c == selected %}selected{% endif %}>{{ c }}</option>
             {% endfor %}
         </select>
+
+        <label>Month:</label>
+        <input type="month" name="month" value="{{ month }}" onchange="this.form.submit()">
+
+        <a href="{{ url_for('home') }}">Clear filters</a>
     </form>
     <h3>Total: ₹{{ "%.2f"|format(total / 100) }}</h3>
+        {% if breakdown %}
+    <h4>Breakdown</h4>
+    <ul>
+        {% for cat, amt in breakdown.items() %}
+        <li>{{ cat }}: ₹{{ "%.2f"|format(amt / 100) }}</li>
+        {% endfor %}
+    </ul>
+    {% endif %}
 
     {% if expenses %}
     <table border="1" cellpadding="8">

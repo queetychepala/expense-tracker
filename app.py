@@ -25,17 +25,33 @@ CATEGORIES = ["Food", "Travel", "Shopping", "Bills", "Other"]
 @app.route("/")
 def home():
     selected = request.args.get("category", "")
+    month = request.args.get("month", "")  # format: 2026-09
+
     query = Expense.query
     if selected:
         query = query.filter_by(category=selected)
+    if month:
+        year, mon = month.split("-")
+        query = query.filter(
+            db.extract("year", Expense.date) == int(year),
+            db.extract("month", Expense.date) == int(mon),
+        )
+
     expenses = query.order_by(Expense.date.desc()).all()
     total = sum(e.amount_paise for e in expenses)
+
+    breakdown = {}
+    for e in expenses:
+        breakdown[e.category] = breakdown.get(e.category, 0) + e.amount_paise
+
     return render_template(
         "index.html",
         expenses=expenses,
         total=total,
         categories=CATEGORIES,
         selected=selected,
+        month=month,
+        breakdown=breakdown,
     )
 
 @app.route("/add", methods=["GET", "POST"])

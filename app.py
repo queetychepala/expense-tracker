@@ -19,11 +19,24 @@ with app.app_context():
     db.create_all()
 
 
+CATEGORIES = ["Food", "Travel", "Shopping", "Bills", "Other"]
+
+
 @app.route("/")
 def home():
-    expenses = Expense.query.order_by(Expense.date.desc()).all()
+    selected = request.args.get("category", "")
+    query = Expense.query
+    if selected:
+        query = query.filter_by(category=selected)
+    expenses = query.order_by(Expense.date.desc()).all()
     total = sum(e.amount_paise for e in expenses)
-    return render_template("index.html", expenses=expenses, total=total)
+    return render_template(
+        "index.html",
+        expenses=expenses,
+        total=total,
+        categories=CATEGORIES,
+        selected=selected,
+    )
 
 @app.route("/add", methods=["GET", "POST"])
 def add_expense():

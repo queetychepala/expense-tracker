@@ -43,6 +43,11 @@ def home():
     breakdown = {}
     for e in expenses:
         breakdown[e.category] = breakdown.get(e.category, 0) + e.amount_paise
+    monthly = {}
+    all_expenses = Expense.query.order_by(Expense.date).all()
+    for e in all_expenses:
+        key = e.date.strftime("%Y-%m")
+        monthly[key] = monthly.get(key, 0) + e.amount_paise
 
     return render_template(
         "index.html",
@@ -52,6 +57,7 @@ def home():
         selected=selected,
         month=month,
         breakdown=breakdown,
+        monthly=monthly,
     )
 
 @app.route("/add", methods=["GET", "POST"])

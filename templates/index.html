@@ -48,6 +48,24 @@
         });
     </script>
     {% endif %}
+    {% if monthly %}
+    <h4>Monthly trend</h4>
+    <div style="max-width: 500px;">
+        <canvas id="monthlyChart"></canvas>
+    </div>
+    <script>
+        new Chart(document.getElementById("monthlyChart"), {
+            type: "bar",
+            data: {
+                labels: {{ monthly.keys()|list|tojson }},
+                datasets: [{
+                    label: "Spent (₹)",
+                    data: {{ monthly.values()|list|tojson }}.map(v => v / 100)
+                }]
+            }
+        });
+    </script>
+    {% endif %}
 
     {% if expenses %}
     <table border="1" cellpadding="8">

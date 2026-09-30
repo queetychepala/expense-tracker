@@ -20,10 +20,12 @@ class Expense(db.Model):
     category = db.Column(db.String(50), nullable=False)
     date = db.Column(db.Date, nullable=False, default=date.today)
     note = db.Column(db.String(200))
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
 
 class Budget(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    month = db.Column(db.String(7), unique=True, nullable=False)  # e.g. 2026-09
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
+    month = db.Column(db.String(7), nullable=False)  # e.g. 2026-09
     limit_paise = db.Column(db.Integer, nullable=False)
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -43,11 +45,12 @@ CATEGORIES = ["Food", "Travel", "Shopping", "Bills", "Other"]
 
 
 @app.route("/")
+@login_required
 def home():
     selected = request.args.get("category", "")
     month = request.args.get("month", "")  # format: 2026-09
 
-    query = Expense.query
+    query = Expense.query.filter_by(user_id=current_user.id)
     if selected:
         query = query.filter_by(category=selected)
     if month:
@@ -63,13 +66,15 @@ def home():
     breakdown = {}
     for e in expenses:
         breakdown[e.category] = breakdown.get(e.category, 0) + e.amount_paise
+
     monthly = {}
-    all_expenses = Expense.query.order_by(Expense.date).all()
+    all_expenses = Expense.query.filter_by(user_id=current_user.id).order_by(Expense.date).all()
     for e in all_expenses:
         key = e.date.strftime("%Y-%m")
         monthly[key] = monthly.get(key, 0) + e.amount_paise
+
     budget_month = month or date.today().strftime("%Y-%m")
-    budget = Budget.query.filter_by(month=budget_month).first()
+    budget = Budget.query.filter_by(user_id=current_user.id, month=budget_month).first()
     budget_limit = budget.limit_paise if budget else None
     budget_spent = monthly.get(budget_month, 0)
 
@@ -88,10 +93,12 @@ def home():
     )
 
 @app.route("/add", methods=["GET", "POST"])
+@login_required
 def add_expense():
     if request.method == "POST":
         amount = float(request.form["amount"])
         expense = Expense(
+            user_id=current_user.id,
             amount_paise=round(amount * 100),
             category=request.form["category"],
             date=datetime.strptime(request.form["date"], "%Y-%m-%d").date(),
@@ -103,15 +110,17 @@ def add_expense():
     return render_template("add_expense.html")
 
 @app.route("/delete/<int:expense_id>", methods=["POST"])
+@login_required
 def delete_expense(expense_id):
-    expense = Expense.query.get_or_404(expense_id)
+    expense = Expense.query.filter_by(id=expense_id, user_id=current_user.id).first_or_404()
     db.session.delete(expense)
     db.session.commit()
     return redirect(url_for("home"))
 
 @app.route("/edit/<int:expense_id>", methods=["GET", "POST"])
+@login_required
 def edit_expense(expense_id):
-    expense = Expense.query.get_or_404(expense_id)
+    expense = Expense.query.filter_by(id=expense_id, user_id=current_user.id).first_or_404()
     if request.method == "POST":
         expense.amount_paise = round(float(request.form["amount"]) * 100)
         expense.category = request.form["category"]
@@ -122,21 +131,22 @@ def edit_expense(expense_id):
     return render_template("edit_expense.html", expense=expense)
 
 @app.route("/budget", methods=["POST"])
+@login_required
 def set_budget():
     month = request.form["month"]
     limit = round(float(request.form["limit"]) * 100)
-    budget = Budget.query.filter_by(month=month).first()
+    budget = Budget.query.filter_by(user_id=current_user.id, month=month).first()
     if budget:
         budget.limit_paise = limit
     else:
-        db.session.add(Budget(month=month, limit_paise=limit))
+        db.session.add(Budget(user_id=current_user.id, month=month, limit_paise=limit))
     db.session.commit()
     return redirect(url_for("home", month=month))
 
 @app.route("/export")
+@login_required
 def export_csv():
-    expenses = Expense.query.order_by(Expense.date.desc()).all()
-
+    expenses = Expense.query.filter_by(user_id=current_user.id).order_by(Expense.date.desc()).all()
     output = io.StringIO()
     writer = csv.writer(output)
     writer.writerow(["Date", "Category", "Amount (Rs)", "Note"])

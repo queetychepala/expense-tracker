@@ -1,9 +1,10 @@
 import csv
 import io
 from datetime import date, datetime
-from flask import Flask, render_template, request, redirect, url_for, Response
+from flask import Flask, render_template, request, redirect, url_for, Response, flash
 from flask_sqlalchemy import SQLAlchemy
-from flask_login import LoginManager, UserMixin
+from flask_login import LoginManager, UserMixin, login_user
+from werkzeug.security import generate_password_hash
 
 app = Flask(__name__)
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///expenses.db"
@@ -147,5 +148,26 @@ def export_csv():
         mimetype="text/csv",
         headers={"Content-Disposition": "attachment; filename=expenses.csv"},
     )
+
+@app.route("/register", methods=["GET", "POST"])
+def register():
+    if request.method == "POST":
+        username = request.form["username"].strip()
+        password = request.form["password"]
+
+        if not username or len(password) < 6:
+            flash("Username is required and password must be at least 6 characters.")
+            return redirect(url_for("register"))
+
+        if User.query.filter_by(username=username).first():
+            flash("That username is already taken.")
+            return redirect(url_for("register"))
+
+        user = User(username=username, password_hash=generate_password_hash(password))
+        db.session.add(user)
+        db.session.commit()
+        login_user(user)
+        return redirect(url_for("home"))
+    return render_template("register.html")
 if __name__ == "__main__":
     app.run(debug=True)

@@ -3,10 +3,14 @@ import io
 from datetime import date, datetime
 from flask import Flask, render_template, request, redirect, url_for, Response
 from flask_sqlalchemy import SQLAlchemy
+from flask_login import LoginManager, UserMixin
 
 app = Flask(__name__)
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///expenses.db"
 db = SQLAlchemy(app)
+app.config["SECRET_KEY"] = "change-this-to-something-random"
+login_manager = LoginManager(app)
+login_manager.login_view = "login"
 
 
 class Expense(db.Model):
@@ -20,6 +24,15 @@ class Budget(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     month = db.Column(db.String(7), unique=True, nullable=False)  # e.g. 2026-09
     limit_paise = db.Column(db.Integer, nullable=False)
+class User(UserMixin, db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(50), unique=True, nullable=False)
+    password_hash = db.Column(db.String(200), nullable=False)
+
+
+@login_manager.user_loader
+def load_user(user_id):
+    return db.session.get(User, int(user_id))
 
 with app.app_context():
     db.create_all()

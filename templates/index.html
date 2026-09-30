@@ -6,6 +6,13 @@
 </head>
 <body>
     <h1>My Expenses</h1>
+    {% if current_user.is_authenticated %}
+        <p>Logged in as <strong>{{ current_user.username }}</strong> |
+           <a href="{{ url_for('logout') }}">Logout</a></p>
+    {% else %}
+        <p><a href="{{ url_for('login') }}">Login</a> |
+           <a href="{{ url_for('register') }}">Register</a></p>
+    {% endif %}
     <a href="{{ url_for('add_expense') }}">+ Add Expense</a>
     <a href="{{ url_for('export_csv') }}">Download CSV</a>
 

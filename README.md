@@ -24,7 +24,7 @@ Python, Flask, SQLAlchemy, SQLite, Flask-Login, Chart.js
     pytest
 
 ## Live demo
-(add your link here after deploying)
+https://expense-tracker-259b.onrender.com
 
 ## Screenshots
 ![Home page](screenshots/account.png)

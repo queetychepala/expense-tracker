@@ -9,7 +9,8 @@ from werkzeug.security import generate_password_hash, check_password_hash
 app = Flask(__name__)
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///expenses.db"
 db = SQLAlchemy(app)
-app.config["SECRET_KEY"] = "change-this-to-something-random"
+import os
+app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "dev-only-key")
 login_manager = LoginManager(app)
 login_manager.login_view = "login"
 
